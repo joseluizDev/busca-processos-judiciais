@@ -2,40 +2,84 @@
 
 <img src="https://joaotextor.com/busca-processos-judiciais/logo.png" alt="logo" height="300px"/>
 
-[Início](#busca-de-processos-judiciais) ⦁
+[Início](#consulta-regional-federal) ⦁
+[Frontend](#-frontend) ⦁
+[Docker](#-docker) ⦁
+[Biblioteca](#-biblioteca) ⦁
 [Contribua](#-contribua-) ⦁
-[Instalação](#-instalação) ⦁
-[Comece a Usar](#-uso) ⦁
 [Documentação](#-documentação) ⦁
-[Reporte um Bug](#-bugs) ⦁
 [Licença](#-licença)
 
 </div>
 
-# Busca de Processos Judiciais
+# Consulta Regional Federal
 
 ## 🤔 O que é?
 
-Biblioteca que utiliza a API Pública do CNJ para abstrair a busca de dados de processos judiciais de todas as Justiças (Estadual, Federal, Militar, Eleitoral, Trabalhista e Tribunais Superiores) do Brasil.
+Sistema completo para consulta de processos judiciais federais que inclui:
+
+- **🌐 Frontend moderno** em Next.js com interface intuitiva
+- **📚 Biblioteca JavaScript** que utiliza a API Pública do CNJ
+- **🐳 Containerização Docker** para fácil deployment
+
+Permite a busca de dados de processos judiciais de todas as Justiças (Estadual, Federal, Militar, Eleitoral, Trabalhista e Tribunais Superiores) do Brasil.
 
 Possui como base de dados a [API Pública do CNJ](https://datajud-wiki.cnj.jus.br/api-publica/).
 
-## 👨‍💻 Contribua 👩‍💻
+## 🌐 Frontend
 
-Pull Requests são extremamente bem-vindos, seja para corrigir bugs, implementar testes, melhorar o código ou criar novas funcionalidades.
+Interface web moderna e responsiva para consulta de processos judiciais.
 
-Por enquanto, essa biblioteca permite a busca por número do processo e também por código da classe processual em conjunto com o código do órgão julgador, com ou sem paginação.
-No entanto, a API permite utilizar inúmeros critérios, como exemplificado [aqui](https://datajud-wiki.cnj.jus.br/api-publica/exemplos/exemplo2).
+### ✨ Características
 
-Sendo assim, fique à vontade para contribuir com o projeto adicionando novos tipos de busca.
+- 🎨 Interface intuitiva com design moderno
+- 🔍 Busca por número do processo
+- 🏛️ Seleção de tribunal
+- 📊 Exibição detalhada dos resultados
+- ⏱️ Timeline de movimentos processuais
+- 🏷️ Tags para assuntos
+- 📱 Responsivo para mobile e desktop
 
-Para isso, dê um [fork](https://github.com/joaotextor/busca-processos-judiciais/fork) no repositório e depois clone para sua máquina:
+### 🚀 Como executar o frontend
 
-`git clone <seu-fork-do-repositório>`
+#### Desenvolvimento
+```bash
+cd frontend
+npm install
+npm run dev
+```
+**Acesso:** http://localhost:3000
 
-Faça checkout para a branch `develop` antes de iniciar as alterações.
+#### Produção
+```bash
+cd frontend
+npm run build
+npm start
+```
 
-## 🔌 Instalação
+## 🐳 Docker
+
+Execute toda a aplicação usando Docker de forma simples:
+
+### Desenvolvimento
+```bash
+docker-compose up frontend
+```
+**Acesso:** http://localhost:3000
+
+### Produção (com nginx)
+```bash
+docker-compose --profile production up -d
+```
+**Acesso:** http://localhost:80
+
+📖 **Para mais detalhes:** consulte [DOCKER.md](./DOCKER.md)
+
+## 📚 Biblioteca
+
+Biblioteca JavaScript que abstrai o acesso à API Pública do CNJ.
+
+### 🔌 Instalação
 
 Para instalar localmente em seu projeto, utilize:
 
@@ -43,9 +87,7 @@ Para instalar localmente em seu projeto, utilize:
 npm i --save busca-processos-judiciais
 ```
 
-## 📤 Uso
-
-### 📂 Importação
+#### 📂 Importação
 
 ```js
 import BuscaProcesso from "busca-processos-judiciais";
@@ -63,7 +105,7 @@ Para fazer a importação de fora de um ambiente node (browser) em um ES6 Module
 import BuscaProcesso from "./node_modules/busca-processos-judiciais/dist/index.mjs".
 ```
 
-### 🚀️ Implementação
+#### 🚀️ Implementação
 
 ```js
 async function buscarProcesso() {
@@ -79,12 +121,12 @@ buscarProcesso()
   .catch((erro) => console.log(erro));
 ```
 
-### 🔑 Chave Pública da API
+#### 🔑 Chave Pública da API
 
 A API do CNJ é pública e a chave pode ser obtida [aqui](https://datajud-wiki.cnj.jus.br/api-publica/acesso).
 O uso da API está sujeita aos **[Termos de Uso](https://formularios.cnj.jus.br/wp-content/uploads/2023/05/Termos-de-uso-api-publica-V1.1.pdf)** definidos pelo CNJ.
 
-### 🔧 Métodos
+#### 🔧 Métodos
 
 **`constructor(tribunal, apiKey)`**: tanto a sigla do Tribunal quanto a chave pública da API são propriedades obrigatórias no construtor da classe.
 
@@ -135,7 +177,7 @@ type Assuntos = {
 };
 ```
 
-### 📐 Objetos de suporte
+#### 📐 Objetos de suporte
 
 Além da classe principal, esta biblioteca também exporta dois objetos de suporte: `tribunais` e `siglasTribunais`.
 
@@ -160,14 +202,50 @@ const busca = new BuscarProcesso(siglasTribunais.TJRS, "api-key")
 
 Isso reduz as chances de erro de digitação, visto que permite o uso do autocomplete de seu editor de código/IDE.
 
+## 👨‍💻 Contribua 👩‍💻
+
+Pull Requests são extremamente bem-vindos, seja para corrigir bugs, implementar testes, melhorar o código ou criar novas funcionalidades.
+
+### 🔧 Desenvolvimento
+
+```bash
+# Clone o repositório
+git clone <repository-url>
+cd consulta-regional-federal
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+
+# Biblioteca
+npm install
+npm run build
+npm test
+```
+
+### 📝 Tipos de contribuição
+
+- **Frontend**: Melhorias na interface, novos recursos, responsividade
+- **Biblioteca**: Novos tipos de busca, otimizações, correções
+- **Docker**: Melhorias na containerização e deployment
+- **Documentação**: Correções, exemplos, tutoriais
+
+Por enquanto, a biblioteca permite a busca por número do processo e também por código da classe processual em conjunto com o código do órgão julgador, com ou sem paginação. No entanto, a API permite utilizar inúmeros critérios, como exemplificado [aqui](https://datajud-wiki.cnj.jus.br/api-publica/exemplos/exemplo2).
+
+Fique à vontade para contribuir adicionando novos tipos de busca e funcionalidades.
+
 ## 👀 Documentação
 
 A documentação completa pode ser encontrada [AQUI](https://busca-processos-judiciais.joaotextor.com).
 
-## 🪲 Bugs
+## 🪲 Bugs & Issues
 
-Encontrando bugs, você pode reportá-los criando um [issue](https://github.com/joaotextor/busca-processos-judiciais/issues).
-Se desejar corrigir, abra o issue e depois siga os passos para a [colaboração](#contribua).
+Encontrou um bug ou tem uma sugestão? Crie um [issue](https://github.com/joaotextor/busca-processos-judiciais/issues) descrevendo:
+
+- **Bug**: Descreva o problema, passos para reproduzir e comportamento esperado
+- **Feature**: Explique a funcionalidade desejada e sua justificativa
+- **Melhoria**: Sugira otimizações ou melhorias no código/interface
 
 ## 📑 Licença
 
