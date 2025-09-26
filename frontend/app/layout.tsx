@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Busca Processos Judiciais',
-  description: 'Interface para busca de processos judiciais',
+  title: 'Consulta Regional Federal',
+  description: 'Sistema de busca de processos judiciais federais',
 }
 
 export default function RootLayout({
