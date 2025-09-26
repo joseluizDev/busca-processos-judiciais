@@ -1,13 +1,20 @@
 # Dockerfile para o frontend Next.js
 FROM node:18-alpine AS base
 
-# Instalar dependências apenas quando necessário
+# Instalar dependências da biblioteca
+FROM base AS lib-deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /lib
+COPY package.json tsconfig.json ./
+COPY utils ./utils
+COPY index.ts ./
+RUN npm install && npm run build
+
+# Instalar dependências do frontend
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Instalar dependências baseadas no gerenciador de pacotes preferido
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY frontend/package.json frontend/yarn.lock* frontend/package-lock.json* frontend/pnpm-lock.yaml* ./
 RUN \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
   elif [ -f package-lock.json ]; then npm ci; \
@@ -15,24 +22,24 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-# Rebuild do código fonte apenas quando necessário
+# Build do frontend
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY frontend/ ./
 
-# Copiar a biblioteca busca-processos-judiciais já construída do diretório pai
-COPY ../package.json ../package.json
-COPY ../dist ../dist
-COPY ../utils ../utils
-COPY ../index.ts ../index.ts
+# Copiar biblioteca construída
+COPY --from=lib-deps /lib/dist ../dist
+COPY --from=lib-deps /lib/package.json ../package.json
+COPY --from=lib-deps /lib/utils ../utils
+COPY index.ts ../index.ts
 
 # Desabilitar telemetria do Next.js durante o build
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# Imagem de produção, copiar todos os arquivos e executar o next
+# Imagem de produção
 FROM base AS runner
 WORKDIR /app
 
