@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import BuscaProcessos from 'busca-processos-judiciais'
 import { endpoints } from 'busca-processos-judiciais/utils/endpoints'
+import { Tribunais } from 'busca-processos-judiciais/utils/types/tribunais-type'
 
 export async function POST(request: NextRequest) {
   try {
     const { tribunal, mode, processo, cpf, classCodigo, orgaoJulgadorCodigo } = await request.json()
 
     const apiKey = process.env.NEXT_PUBLIC_API_KEY!
-    const busca = new BuscaProcessos(tribunal, apiKey)
+    const busca = new BuscaProcessos(tribunal as Tribunais, apiKey)
 
     let result
     if (mode === 'processo') {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     } else if (mode === 'cpf') {
       // Implementação direta da busca por CPF
       try {
-        const rawResult = await fetch(endpoints[tribunal], {
+        const rawResult = await fetch(endpoints[tribunal as Tribunais], {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
