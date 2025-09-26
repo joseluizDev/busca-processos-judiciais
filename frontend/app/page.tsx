@@ -6,18 +6,71 @@ import { tribunais } from 'busca-processos-judiciais/utils/tribunais'
 export default function Home() {
   const [tribunal, setTribunal] = useState('TRF1')
   const [processo, setProcesso] = useState('')
+  const [cpf, setCpf] = useState('')
+  const [searchType, setSearchType] = useState<'processo' | 'cpf'>('processo')
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 11) {
+      const formatted = numbers
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      return formatted
+    }
+    return value.slice(0, 14)
+  }
+
+  const validateCPF = (cpf: string) => {
+    const numbers = cpf.replace(/\D/g, '')
+    if (numbers.length !== 11) return false
+
+    // Verifica se todos os números são iguais
+    if (/^(\d)\1{10}$/.test(numbers)) return false
+
+    // Validação dos dígitos verificadores
+    let sum = 0
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(numbers.charAt(i)) * (10 - i)
+    }
+    let digit = 11 - (sum % 11)
+    if (digit === 10 || digit === 11) digit = 0
+    if (digit !== parseInt(numbers.charAt(9))) return false
+
+    sum = 0
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(numbers.charAt(i)) * (11 - i)
+    }
+    digit = 11 - (sum % 11)
+    if (digit === 10 || digit === 11) digit = 0
+    if (digit !== parseInt(numbers.charAt(10))) return false
+
+    return true
+  }
 
   const handleSearch = async () => {
     if (!tribunal) {
       setError('Selecione o tribunal')
       return
     }
-    if (!processo) {
-      setError('Preencha o número do processo')
-      return
+
+    if (searchType === 'processo') {
+      if (!processo) {
+        setError('Preencha o número do processo')
+        return
+      }
+    } else if (searchType === 'cpf') {
+      if (!cpf) {
+        setError('Preencha o CPF')
+        return
+      }
+      if (!validateCPF(cpf)) {
+        setError('CPF inválido')
+        return
+      }
     }
     setLoading(true)
     setError('')
@@ -29,8 +82,9 @@ export default function Home() {
         },
         body: JSON.stringify({
           tribunal,
-          mode: 'processo',
-          processo,
+          mode: searchType,
+          processo: searchType === 'processo' ? processo : undefined,
+          cpf: searchType === 'cpf' ? cpf.replace(/\D/g, '') : undefined,
         }),
       })
       if (!response.ok) {
@@ -47,6 +101,7 @@ export default function Home() {
 
   const handleClear = () => {
     setProcesso('')
+    setCpf('')
     setResult(null)
     setError('')
   }
@@ -64,19 +119,62 @@ export default function Home() {
         </div>
         <p className="text-gray-600 mb-8">Sistema de busca de processos judiciais federais</p>
 
+        {/* Abas de seleção do tipo de busca */}
+        <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setSearchType('processo')}
+            className={`flex-1 py-3 px-4 rounded-md font-medium transition-all ${
+              searchType === 'processo'
+                ? 'bg-white shadow-sm text-purple-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Busca por Processo
+          </button>
+          <button
+            onClick={() => setSearchType('cpf')}
+            className={`flex-1 py-3 px-4 rounded-md font-medium transition-all ${
+              searchType === 'cpf'
+                ? 'bg-white shadow-sm text-purple-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Busca por CPF
+          </button>
+        </div>
+
         <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
-              NÚMERO DO PROCESSO
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: 0000000-00.0000.0.00.0000 ou 00000000000000000000"
-              value={processo}
-              onChange={(e) => setProcesso(e.target.value)}
-              className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none placeholder-gray-400"
-            />
-          </div>
+          {searchType === 'processo' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                NÚMERO DO PROCESSO
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: 0000000-00.0000.0.00.0000 ou 00000000000000000000"
+                value={processo}
+                onChange={(e) => setProcesso(e.target.value)}
+                className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none placeholder-gray-400"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                CPF DO AUTOR/RÉU
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: 123.456.789-10"
+                value={cpf}
+                onChange={(e) => setCpf(formatCPF(e.target.value))}
+                maxLength={14}
+                className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none placeholder-gray-400"
+              />
+              {cpf && !validateCPF(cpf) && cpf.length === 14 && (
+                <p className="text-red-500 text-sm mt-2">CPF inválido</p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
@@ -118,8 +216,63 @@ export default function Home() {
 
         {result && (
           <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Resultado da Consulta:</h2>
-            <div className="space-y-3">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              {searchType === 'cpf' ? 'Processos Encontrados:' : 'Resultado da Consulta:'}
+            </h2>
+
+            {searchType === 'cpf' && result.processos ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  {result.total} processo(s) encontrado(s) para o CPF {formatCPF(result.cpfConsultado)}
+                </p>
+                {result.processos.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {result.processos.map((proc: any, index: number) => (
+                      <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-purple-600">{proc.numeroProcesso}</h3>
+                          <span className="text-xs bg-gray-100 px-2 py-1 rounded">{proc.grau}</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-600">Classe:</span> {proc.classeProcessual}
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Órgão:</span> {proc.orgaoJulgador}
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Ajuizamento:</span> {new Date(proc.dataAjuizamento).toLocaleDateString('pt-BR')}
+                          </div>
+                          {proc.valorCausa && (
+                            <div>
+                              <span className="text-gray-600">Valor da Causa:</span> R$ {proc.valorCausa.toLocaleString('pt-BR')}
+                            </div>
+                          )}
+                        </div>
+                        {proc.assuntos && proc.assuntos.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-gray-600 text-sm">Assuntos: </span>
+                            {proc.assuntos.slice(0, 2).map((assunto: any, idx: number) => (
+                              <span key={idx} className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs mr-1">
+                                {assunto.nome}
+                              </span>
+                            ))}
+                            {proc.assuntos.length > 2 && (
+                              <span className="text-gray-500 text-xs">+{proc.assuntos.length - 2}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-600 text-center py-4">
+                    {result.message || 'Nenhum processo encontrado para este CPF'}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Número do Processo:</p>
@@ -209,6 +362,7 @@ export default function Home() {
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
       </div>

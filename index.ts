@@ -231,6 +231,103 @@ export default class BuscaProcessos {
       console.log(error);
     }
   }
+
+  /**
+   * Busca processos relacionados a um CPF específico.
+   *
+   * @param cpf - O CPF do autor ou réu (apenas números, sem formatação).
+   * @returns - Uma `Promise` que retorna uma lista de processos relacionados ao CPF.
+   * @throws - Erro do servidor caso um erro ocorra durante o `fetch`
+   *
+   * @example
+   * ```js
+   * const buscaProcessos = new BuscaProcessos(tribunal, apiKey);
+   * const cpf = "12345678910"; // Sem pontos e traços
+   * const result = await buscaProcessos.searchByCPF(cpf);
+   * console.log(result);
+   * ```
+   */
+  public async searchByCPF(cpf: string): Promise<any> {
+    try {
+      const rawResult = await fetch(endpoints[this.tribunal], {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: this.APIKey,
+        },
+        body: JSON.stringify({
+          size: 100, // Limita a 100 processos
+          query: {
+            bool: {
+              should: [
+                {
+                  nested: {
+                    path: "polos.polo.poloAtivo.parte",
+                    query: {
+                      match: {
+                        "polos.polo.poloAtivo.parte.documentoPrincipal": cpf
+                      }
+                    }
+                  }
+                },
+                {
+                  nested: {
+                    path: "polos.polo.poloPassivo.parte",
+                    query: {
+                      match: {
+                        "polos.polo.poloPassivo.parte.documentoPrincipal": cpf
+                      }
+                    }
+                  }
+                }
+              ],
+              minimum_should_match: 1
+            }
+          },
+          sort: [{ "dataAjuizamento": { order: "desc" } }]
+        }),
+      });
+
+      const result = await rawResult.json();
+
+      if (!result.hits || result.hits.hits.length === 0) {
+        return {
+          processos: [],
+          total: 0,
+          message: "Nenhum processo encontrado para este CPF"
+        };
+      }
+
+      // Formata os resultados de forma mais limpa
+      const processos = result.hits.hits.map((hit: any) => {
+        const source = hit._source;
+        return {
+          numeroProcesso: source.numeroProcesso,
+          classeProcessual: source.classe?.nome || "Não informado",
+          tribunal: this.tribunal,
+          orgaoJulgador: source.orgaoJulgador?.nome || "Não informado",
+          dataAjuizamento: source.dataAjuizamento,
+          ultimaAtualizacao: source.dataHoraUltimaAtualizacao,
+          grau: source.grau,
+          assuntos: source.assuntos?.map((a: any) => ({
+            codigo: a.codigo,
+            nome: a.nome
+          })) || [],
+          valorCausa: source.valorCausa
+        };
+      });
+
+      return {
+        processos,
+        total: result.hits.total?.value || processos.length,
+        cpfConsultado: cpf
+      };
+
+    } catch (error) {
+      console.log(error);
+      throw new Error("Erro ao buscar processos por CPF");
+    }
+  }
 }
 
 export { siglasTribunais, tribunais };
